@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title><%= title %></title>
+    <link rel='stylesheet' href='/stylesheets/style.css' />
+  </head>
+  <body>
+    <h1><%= title %></h1>
+    <p>Welcome to <%= title %></p>
+    <ul id="resource-list">
+    </ul>
+    <script>
+        function addResource(id, r) {
+            var list = document.getElementById('resource-list');
+            var element = document.createElement('li');
+            element.setAttribute('id', 'r' + id);
+            var text = document.createTextNode(r.name);
+            element.appendChild(text);
+            list.appendChild(element);
+        }
+        function updateResource(id, r) {
+            var element = document.querySelector('#resource-list li#r' + id);
+            element.innerHTML = r.name;
+        }
+        function removeResource(id) {
+            var element = document.querySelector('#resource-list li#r' + id);
+            element.parentElement.removeChild(element);
+        }
+
+        function subscribeToResources() {
+            var source = new EventSource('/resources');
+            source.onmessage = function (e) {
+              console.log('MESSAGE', e);
+            };
+
+            source.addEventListener('open', function (e) {
+                console.log('OPEN', e);
+            }, false);
+            source.addEventListener('error', function (e) {
+                console.log('ERROR', e);
+            }, false);
+            source.addEventListener('patch', function (e) {
+                console.log('patch', e);
+
+                var list = JSON.parse(e.data);
+                list.forEach(function (e) {
+                    var id = e.path.split('resources/')[1];
+                    console.log('got %s', e.op);
+                    if (e.op === 'add') {
+                        addResource(id, e.value);
+                    } else if (e.op === 'replace') {
+                        updateResource(id, e.value);
+                    } else if (e.op === 'remove') {
+                        removeResource(id);
+                    } else {
+                        console.error('ERROR - unrecognized operation - ' + e.op);
+                    }
+                });
+            }, false);
+        }
+
+        // GET resources then subscribe to them
+        var request = new XMLHttpRequest();
+        request.open('GET', '/resources', true);
+        request.setRequestHeader('Accept', 'application/json');
+        request.onload = function (e) {
+            if (this.status !== 200) {
+                console.error('ERROR - XHR failed with status ' + this.status);
+                return;
+            }
+
+            subscribeToResources();
+
+            JSON.parse(this.responseText).resources.forEach(function (r) {
+                addResource(r.id, r);
+            });
+        };
+        request.send();
+    </script>
+  </body>
+</html>

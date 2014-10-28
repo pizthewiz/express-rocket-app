@@ -116,6 +116,7 @@ function broadcastMessage(msg) {
 
 function subscribe(req, res) {
   req.socket.setTimeout(Infinity);
+  res.connection.setTimeout(1000 * 60 * 20);
 
   res.writeHead(200, {
     "Content-Type": "text/event-stream",

@@ -199,7 +199,7 @@ app.put('/resources/:id', function (req, res) {
   broadcastMessage(msg);
 });
 app.delete('/resources/:id', function (req, res) {
-  var doc = dataStore.delete(req.param('id'));
+  dataStore.delete(req.param('id'));
   console.log(dataStore.data());
   res.status(204).json(); // failure 406
 

@@ -91,7 +91,7 @@ if (app.settings.env === 'development') {
 }
 
 // UTILITIES
-function broadcastMessage(operation, path, value) {
+function constructMessage(operation, path, value) {
   var data = {
     op: operation,
     path: path
@@ -108,6 +108,9 @@ function broadcastMessage(operation, path, value) {
   // msg += 'retry: ' + 3000 + '\n';
   msg += '\n';
 
+  return msg;
+}
+function broadcastMessage(msg) {
   connections.forEach(function (res) { res.write(msg); });
 }
 
@@ -181,7 +184,8 @@ app.post('/resources', function (req, res) {
   console.log(dataStore.data());
   res.status(201).json(doc); // failure 406
 
-  broadcastMessage('add', 'resources/' + doc.id, doc);
+  var msg = constructMessage('add', 'resources/' + doc.id, doc);
+  broadcastMessage(msg);
 });
 app.get('/resources/:id', function (req, res) {
   res.status(200).json(req.doc); // failure 404
@@ -191,14 +195,16 @@ app.put('/resources/:id', function (req, res) {
   console.log(dataStore.data());
   res.status(200).json(doc); // failure 406
 
-  broadcastMessage('replace', 'resources/' + req.param('id'), doc);
+  var msg = constructMessage('replace', 'resources/' + req.param('id'), doc);
+  broadcastMessage(msg);
 });
 app.delete('/resources/:id', function (req, res) {
   var doc = dataStore.delete(req.param('id'));
   console.log(dataStore.data());
   res.status(204).json(); // failure 406
 
-  broadcastMessage('remove', 'resources/' + req.param('id'));
+  var msg = constructMessage('remove', 'resources/' + req.param('id'));
+  broadcastMessage(msg);
 });
 
 app.listen(app.get('port'), function () {
